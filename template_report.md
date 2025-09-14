@@ -5,55 +5,70 @@
 - **📘 Disciplina:** Laboratório de Experimentação de Software
 - **🗓 Período:** 6° Período
 - **👨‍🏫 Professor(a):** Prof. Dr. João Paulo Carneiro Aramuni
-- **👥 Membros do Grupo:** [Lista de integrantes]
+- **👥 Membros do Grupo:** [Arthur Ferreira, Kimberly Liz, Renato Cazzoletti]
 
 ---
 
 ## 2. Introdução
-Descreva o contexto do laboratório, o objetivo do estudo e a relevância da análise.  
-Inclua hipóteses informais sobre os resultados esperados.
+Este laboratório tem como objetivo analisar aspectos da qualidade de repositórios Java desenvolvidos de forma colaborativa, correlacionando-os com características do processo de desenvolvimento. Em projetos open-source, onde diversos desenvolvedores contribuem, existe o risco de degradação dos atributos de qualidade interna como modularidade, manutenibilidade e legibilidade.
 
-**💡 Exemplos de Hipóteses Informais - Informal Hypotheses (IH):**
+A análise será realizada nos top-1.000 repositórios Java mais populares do GitHub, utilizando a ferramenta CK (Code Metrics) para calcular métricas de qualidade de código, correlacionando-as com métricas de processo de desenvolvimento.
 
-- **IH01:** Sistemas populares recebem mais contribuições externas e lançam releases com maior frequência, refletindo um processo de desenvolvimento ativo.
-- **IH02:** Mais de 50% dos repositórios populares são mantidos há mais de 5 anos, indicando maturidade do projeto.
-- **IH03:** Espera-se que mais de 50% dos repositórios populares tenham pelo menos 70% das issues fechadas, demonstrando boa gestão de problemas.
-- **IH04:** Repositórios populares tendem a ser escritos nas linguagens mais utilizadas (ex.: JavaScript, Python, Java), representando a adoção de linguagens consolidadas.
-- **IH05:** Mais de 50% dos repositórios populares recebem atualizações nos últimos 3 meses, refletindo atividade contínua da comunidade.
-- **IH06:** Projetos populares com maior número de forks tendem a ter mais pull requests aceitas, indicando engajamento externo significativo.
-- **IH07:** Repositórios populares com grande número de stars podem apresentar Big Numbers em métricas como número de commits, branches e releases, destacando sua relevância na comunidade open-source.
+### 💡 Hipóteses Informais - Informal Hypotheses (IH):
+
+- **IH01:** Repositórios mais populares (maior número de estrelas) tendem a apresentar melhor qualidade de código, com menores valores de acoplamento (CBO) devido a maior revisão por pares.
+- **IH02:** Sistemas mais maduros (maior idade) apresentam maior profundidade de herança (DIT), indicando evolução arquitetural ao longo do tempo.
+- **IH03:** Repositórios com maior atividade (mais releases) mantêm melhor coesão (menores valores de LCOM), devido à refatoração contínua.
+- **IH04:** Projetos maiores (maior LOC) tendem a ter maior acoplamento (CBO) devido à complexidade inerente do sistema.
+- **IH05:** Repositórios populares apresentam correlação positiva entre tamanho e número de releases, indicando desenvolvimento ativo.
 
 ---
 
 ## 3. Tecnologias e ferramentas utilizadas
-- **💻 Linguagem de Programação:** [Ex.: Python, Java]
-- **🛠 Frameworks/Bibliotecas:** [Ex.: Pandas, Matplotlib, Seaborn, CK]
-- **🌐 APIs utilizadas:** [Ex.: GitHub GraphQL API, GitHub REST API]
-- **📦 Dependências:** [Ex.: requests, numpy]
+- **💻 Linguagem de Programação:** Python 3.x
+- **🛠 Frameworks/Bibliotecas:** Pandas, Matplotlib, Seaborn, GitPython, GQL (GraphQL)
+- **🌐 APIs utilizadas:** GitHub GraphQL API
+- **📦 Dependências:** requests, python-dotenv, gql
+- **⚙️ Ferramenta de Análise:** CK Tool (Code Metrics)
 
 ---
 
 ## 4. Metodologia
-Descreva detalhadamente as etapas do experimento ou estudo, incluindo coleta de dados, filtragem, normalização, análise e visualização.
 
 ### 4.1 Coleta de dados
-- Foram coletados dados de [X] repositórios utilizando a [GitHub API].
-- Critérios de seleção: [Ex.: top-1000 por número de estrelas, linguagem específica, etc.]
+- Foram coletados dados dos top-1.000 repositórios Java mais populares do GitHub utilizando a GitHub GraphQL API.
+- Critérios de seleção: repositórios com linguagem primária Java, ordenados por número de estrelas (stargazerCount).
+- Paginação implementada com PAGE_SIZE = 25 para otimizar as requisições à API.
 
 ### 4.2 Filtragem e paginação
-- Foi utilizada paginação da API devido ao grande volume de dados.
-- ⏱ Tempo médio de coleta: [XX minutos].
+- Utilizada paginação da API GitHub para coletar grandes volumes de dados de forma eficiente.
+- Implementado sistema de retry com backoff exponencial para lidar com rate limits da API.
+- ⏱ Tempo médio de coleta: aproximadamente 15-20 minutos para 1.000 repositórios.
 
 ### 4.3 Normalização e pré-processamento
-- Os dados foram normalizados utilizando [ex.: min-max scaling] para garantir consistência.
+- Os dados foram organizados em formato CSV para facilitar análise posterior.
+- Tratamento de dados ausentes e normalização de datas (formato ISO 8601).
+- Cálculo da idade dos repositórios baseado na data de criação.
 
 ### 4.4 Cálculo de métricas
-- Métricas de interesse: idade do repositório, número de pull requests aceitas, número de releases, tempo desde a última atualização, linguagem primária, percentual de issues fechadas.
-- Métricas compostas calculadas por meio de combinação linear ponderada de fatores relevantes.
 
-### 4.5 Ordenação e análise inicial
-- Repositórios ordenados por pontuação composta ou por número de estrelas.
-- Análise inicial baseada em valores medianos e contagem de categorias.
+#### Métricas de Processo:
+- **Popularidade:** Número de estrelas (stargazerCount)
+- **Tamanho:** Linhas de código (LOC) e linhas de comentários
+- **Atividade:** Número de releases
+- **Maturidade:** Idade em anos (calculada a partir de createdAt)
+
+#### Métricas de Qualidade (CK Tool):
+- **CBO:** Coupling Between Objects - mede acoplamento entre classes
+- **DIT:** Depth of Inheritance Tree - profundidade da árvore de herança
+- **LCOM:** Lack of Cohesion of Methods - falta de coesão entre métodos
+
+### 4.5 Automação da coleta
+- Desenvolvido script Python para automação do processo de:
+  1. Clonagem de repositórios via download de ZIP
+  2. Execução da ferramenta CK em cada repositório
+  3. Consolidação dos resultados em arquivos CSV
+  4. Sumarização das métricas por repositório
 
 ---
 
@@ -65,13 +80,10 @@ Liste as questões de pesquisa que guiaram o estudo, com suas métricas associad
 
 | RQ   | Pergunta | Métrica utilizada | Código da Métrica |
 |------|----------|-----------------|-----------------|
-| RQ01 | Sistemas populares são maduros/antigos? | 🕰 Idade do repositório (calculado a partir da data de criação) | LM01 |
-| RQ02 | Sistemas populares recebem muita contribuição externa? | ✅ Total de Pull Requests Aceitas | LM02 |
-| RQ03 | Sistemas populares lançam releases com frequência? | 📦 Total de Releases | LM03 |
-| RQ04 | Sistemas populares são atualizados com frequência? | ⏳ Tempo desde a última atualização (dias) | LM04 |
-| RQ05 | Sistemas populares são escritos nas linguagens mais populares? | 💻 Linguagem primária de cada repositório | AM01 |
-| RQ06 | Sistemas populares possuem um alto percentual de issues fechadas? | 📋 Razão entre número de issues fechadas pelo total de issues | LM05 |
-| RQ07 | Sistemas escritos em linguagens mais populares recebem mais contribuição externa, lançam mais releases e são atualizados com mais frequência? | ✅ Pull Requests Aceitas, 📦 Número de Releases, ⏳ Tempo desde a Última Atualização, 💻 Linguagem primária | LM02, LM03, LM04, AM01 |
+| RQ01 | Qual a relação entre a popularidade dos repositórios e as suas características de qualidade? | ⭐ Número de Estrelas vs CBO, DIT, LCOM | LM01, QM01, QM02, QM03 |
+| RQ02 | Qual a relação entre a maturidade dos repositórios e as suas características de qualidade? | 🕰 Idade do Repositório vs CBO, DIT, LCOM | LM02, QM01, QM02, QM03 |
+| RQ03 | Qual a relação entre a atividade dos repositórios e as suas características de qualidade? | 📦 Número de Releases vs CBO, DIT, LCOM | LM03, QM01, QM02, QM03 |
+| RQ04 | Qual a relação entre o tamanho dos repositórios e as suas características de qualidade? | 📏 LOC vs CBO, DIT, LCOM | LM04, QM01, QM02, QM03 |
 
 ---
 
@@ -209,17 +221,64 @@ Resumo das principais descobertas do laboratório.
 ---
 
 ## 9. Referências
-Liste as referências bibliográficas ou links utilizados.
-- [📌 GitHub API Documentation](https://docs.github.com/en/graphql)
-- [📌 CK Metrics Tool](https://ckjm.github.io/)
+
+- [📌 GitHub GraphQL API Documentation](https://docs.github.com/en/graphql)
+- [📌 CK Metrics Tool](https://github.com/mauricioaniche/ck)
+- [📌 Chidamber, S. R., & Kemerer, C. F. (1994). A metrics suite for object oriented design](https://ieeexplore.ieee.org/document/295895)
 - [📌 Biblioteca Pandas](https://pandas.pydata.org/)
-- [📌 Power BI](https://docs.microsoft.com/en-us/power-bi/fundamentals/service-get-started)
+- [📌 Matplotlib Documentation](https://matplotlib.org/)
+- [📌 Seaborn Statistical Data Visualization](https://seaborn.pydata.org/)
 
 ---
 
 ## 10. Apêndices
-- 💾 Scripts utilizados para coleta e análise de dados.
-- 🔗 Consultas GraphQL ou endpoints REST.
-- 📊 Planilhas e arquivos CSV gerados.
+
+### A. Scripts Desenvolvidos
+
+#### A.1 Script de Coleta via GitHub API (`github_collector.py`)
+```python
+# Script fornecido para coleta dos top-1000 repositórios Java
+# Utiliza GraphQL API do GitHub com paginação e retry
+```
+
+#### A.2 Script de Extração de Métricas CK (`ck_metrics_extractor.py`)
+```python
+# Script para automação da ferramenta CK
+# Inclui clonagem, execução e consolidação de resultados
+```
+
+#### A.3 Query GraphQL (`query.graphql`)
+```graphql
+# Query utilizada para buscar repositórios Java ordenados por estrelas
+```
+
+### B. Arquivos de Dados
+
+- 💾 `repositories.csv` - Lista dos 1.000 repositórios coletados
+- 💾 `all_class_metrics.csv` - Métricas consolidadas de todas as classes
+- 💾 `summary_metrics.csv` - Sumarização das métricas por repositório
+
+### C. Configuração do Ambiente
+
+#### C.1 Dependências Python (`requirements.txt`)
+```
+pandas==1.5.3
+gitpython==3.1.31
+gql==3.4.1
+python-dotenv==1.0.0
+requests==2.31.0
+matplotlib==3.7.1
+seaborn==0.12.2
+```
+
+#### C.2 Configuração da Ferramenta CK
+```bash
+# Clonagem e compilação da ferramenta CK
+git clone https://github.com/mauricioaniche/ck.git
+cd ck
+mvn clean package
+```
+
+
 
 ---
