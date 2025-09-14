@@ -1,0 +1,22 @@
+query TopJavaRepos($cursor: String) {
+  search(query: "language:Java sort:stars-desc", type: REPOSITORY, first: 25, after: $cursor) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    edges {
+      node {
+        ... on Repository {
+          name
+          owner {
+            login
+          }
+          url
+          stargazerCount
+          createdAt
+          pushedAt
+        }
+      }
+    }
+  }
+}

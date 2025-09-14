@@ -22,7 +22,13 @@ def clone_repo(repo_url, dest_dir='repo'):
     url_parts = repo_url.rstrip('/').split('/')
     repo_owner = url_parts[-2]
     repo_name = url_parts[-1]
-    default_branch = 'main'  # Pode ser ajustado se necessário
+    api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}"
+    r = requests.get(api_url)
+    if r.status_code == 200:
+        default_branch = r.json().get("default_branch", "main")
+    else:
+        default_branch = "main"
+
     zip_url = f"https://github.com/{repo_owner}/{repo_name}/archive/refs/heads/{default_branch}.zip"
 
     print(f"[+] Baixando ZIP: {zip_url}")
