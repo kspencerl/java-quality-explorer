@@ -7,14 +7,38 @@ from git import Repo
 
 def clone_repo(repo_url, dest_dir='repo'):
     """
-    Clona o repositório GitHub informado para um diretório local.
-    Se o diretório já existir, ele será removido antes de clonar novamente.
+    Baixa e descompacta o repositório GitHub informado como ZIP para um diretório local.
+    Se o diretório já existir, ele será removido antes de baixar novamente.
     """
+    import requests
+    import zipfile
+    from io import BytesIO
+
     if os.path.exists(dest_dir):
         shutil.rmtree(dest_dir)
-    print(f"[+] Clonando repositório de {repo_url} ...")
-    Repo.clone_from(repo_url, dest_dir)
-    return dest_dir
+
+    print(f"[+] Preparando download do ZIP de {repo_url} ...")
+    # Extrai owner e repo do URL
+    url_parts = repo_url.rstrip('/').split('/')
+    repo_owner = url_parts[-2]
+    repo_name = url_parts[-1]
+    default_branch = 'main'  # Pode ser ajustado se necessário
+    zip_url = f"https://github.com/{repo_owner}/{repo_name}/archive/refs/heads/{default_branch}.zip"
+
+    print(f"[+] Baixando ZIP: {zip_url}")
+    response = requests.get(zip_url)
+    if response.status_code != 200:
+        print(f"Erro ao baixar ZIP: {zip_url}")
+        sys.exit(1)
+
+    with zipfile.ZipFile(BytesIO(response.content)) as zip_ref:
+        zip_ref.extractall(dest_dir)
+
+    extracted_dir = os.path.join(dest_dir, f"{repo_name}-{default_branch}")
+    if not os.path.exists(extracted_dir):
+        print(f"Erro: diretório extraído não encontrado: {extracted_dir}")
+        sys.exit(1)
+    return extracted_dir
 
 def run_ck(jar_path, repo_dir, output_dir='ck_output'):
     """
