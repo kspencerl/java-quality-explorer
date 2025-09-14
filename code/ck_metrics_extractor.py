@@ -219,6 +219,33 @@ def load_and_print_variable_metrics(variable_csv_path):
     # print(df_variable[available_variable_cols].to_string(index=False))  # Sem índice numérico
     print(df_variable[available_variable_cols].head()) # Exibe as 5 primeiras linhas para visualização 
 
+def process_multiple_repos(repo_list_csv, ck_jar_path, output_csv="all_class_metrics.csv"):
+    df_all = []
+
+    repos = pd.read_csv(repo_list_csv)
+    for i, row in repos.iterrows():
+        repo_url = row["url"]
+        print(f"\n=== [{i+1}/{len(repos)}] Processando {repo_url} ===")
+        try:
+            repo_path = clone_repo(repo_url)
+            csv_paths = run_ck(ck_jar_path, repo_path)
+
+            # Carrega métricas de classe
+            df_class = pd.read_csv(csv_paths["class"])
+            df_class["repo"] = f"{row['owner']}/{row['name']}"
+            df_all.append(df_class)
+        except Exception as e:
+            print(f"[!] Falha em {repo_url}: {e}")
+            continue
+
+    # Consolida tudo
+    if df_all:
+        df_final = pd.concat(df_all, ignore_index=True)
+        df_final.to_csv(output_csv, index=False)
+        print(f"\n Arquivo salvo em {output_csv} com {len(df_final)} linhas.")
+    else:
+        print("Erro.")
+
 def main():
     print("== CK Metrics Extractor ==")
 
