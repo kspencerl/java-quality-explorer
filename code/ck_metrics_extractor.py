@@ -7,8 +7,8 @@ from git import Repo
 
 def clone_repo(repo_url, dest_dir='repo'):
     """
-    Baixa e descompacta o repositório GitHub informado como ZIP para um diretório local.
-    Se o diretório já existir, ele será removido antes de baixar novamente.
+    Downloads and extracts the GitHub repository as ZIP to a local directory.
+    If the directory already exists, it will be removed before downloading again.
     """
     import requests
     import zipfile
@@ -17,8 +17,8 @@ def clone_repo(repo_url, dest_dir='repo'):
     if os.path.exists(dest_dir):
         shutil.rmtree(dest_dir)
 
-    print(f"[+] Preparando download do ZIP de {repo_url} ...")
-    # Extrai owner e repo do URL
+    print(f"[+] Preparing ZIP download from {repo_url} ...")
+    # Extract owner and repo from URL
     url_parts = repo_url.rstrip('/').split('/')
     repo_owner = url_parts[-2]
     repo_name = url_parts[-1]
@@ -31,10 +31,10 @@ def clone_repo(repo_url, dest_dir='repo'):
 
     zip_url = f"https://github.com/{repo_owner}/{repo_name}/archive/refs/heads/{default_branch}.zip"
 
-    print(f"[+] Baixando ZIP: {zip_url}")
+    print(f"[+] Downloading ZIP: {zip_url}")
     response = requests.get(zip_url)
     if response.status_code != 200:
-        print(f"Erro ao baixar ZIP: {zip_url}")
+        print(f"Error downloading ZIP: {zip_url}")
         sys.exit(1)
 
     with zipfile.ZipFile(BytesIO(response.content)) as zip_ref:
@@ -42,15 +42,15 @@ def clone_repo(repo_url, dest_dir='repo'):
 
     extracted_dir = os.path.join(dest_dir, f"{repo_name}-{default_branch}")
     if not os.path.exists(extracted_dir):
-        print(f"Erro: diretório extraído não encontrado: {extracted_dir}")
+        print(f"Error: extracted directory not found: {extracted_dir}")
         sys.exit(1)
     return extracted_dir
 
 def run_ck(jar_path, repo_dir, output_dir=None):
     """
-    Executa o CK Tool e retorna os caminhos para os arquivos .csv gerados.
+    Executes the CK Tool and returns paths to the generated .csv files.
     """
-    # Cria um diretório único para cada repositório se não especificado
+    # Create a unique directory for each repository if not specified
     if output_dir is None:
         import time
         timestamp = int(time.time())
@@ -60,26 +60,26 @@ def run_ck(jar_path, repo_dir, output_dir=None):
         shutil.rmtree(output_dir)
     os.makedirs(output_dir)
 
-    print(f"[+] Executando CK Tool nas fontes em {repo_dir} ...")
-    print(f"[+] Salvando resultados em {output_dir} ...")
+    print(f"[+] Running CK Tool on sources in {repo_dir} ...")
+    print(f"[+] Saving results to {output_dir} ...")
     
     cmd = [
         'java', '-jar', jar_path,
         repo_dir,
-        'true',      # usar JARs
-        '0',         # max files per partition = automático
-        'false',     # NÃO extrair métricas de variáveis e campos (só classes)
+        'true',      # use JARs
+        '0',         # max files per partition = automatic
+        'false',     # DO NOT extract variable and field metrics (classes only)
         output_dir + os.sep
     ]
 
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
-        print(f"Erro ao executar o CK: {e}")
+        print(f"Error executing CK: {e}")
         print(f"Stderr: {e.stderr}")
         return None
 
-    # Caminhos para os arquivos gerados
+    # Paths to generated files
     files = {
         'class': os.path.join(output_dir, 'class.csv'),
         'field': os.path.join(output_dir, 'field.csv'),
@@ -87,30 +87,30 @@ def run_ck(jar_path, repo_dir, output_dir=None):
         'variable': os.path.join(output_dir, 'variable.csv'),
     }
 
-    # Confirma se class.csv existe
+    # Confirm if class.csv exists
     if not os.path.exists(files['class']):
-        print(f"Erro: class.csv não encontrado em {output_dir}")
+        print(f"Error: class.csv not found in {output_dir}")
         return None
 
     return files
 
 def aggregate_metrics_by_repo(df_class, repo_name):
     """
-    Agrega métricas CBO, DIT e LCOM por repositório.
-    Calcula estatísticas descritivas para cada métrica.
+    Aggregates CBO, DIT and LCOM metrics by repository.
+    Calculates descriptive statistics for each metric.
     """
     metrics = ['cbo', 'dit', 'lcom']
     available_metrics = [metric for metric in metrics if metric in df_class.columns]
     
     if not available_metrics:
-        print(f"[!] Nenhuma métrica encontrada para {repo_name}")
+        print(f"[!] No metrics found for {repo_name}")
         return None
     
-    # Calcula estatísticas para cada métrica
+    # Calculate statistics for each metric
     repo_stats = {'repo': repo_name, 'total_classes': len(df_class)}
     
     for metric in available_metrics:
-        # Remove valores NaN/nulos para cálculos
+        # Remove NaN/null values for calculations
         metric_values = df_class[metric].dropna()
         
         if len(metric_values) > 0:
@@ -124,7 +124,7 @@ def aggregate_metrics_by_repo(df_class, repo_name):
                 f'{metric}_q3': round(metric_values.quantile(0.75), 3)
             })
         else:
-            # Valores padrão se não há dados válidos
+            # Default values if no valid data
             for stat in ['mean', 'median', 'std', 'min', 'max', 'q1', 'q3']:
                 repo_stats[f'{metric}_{stat}'] = None
     
@@ -133,12 +133,12 @@ def aggregate_metrics_by_repo(df_class, repo_name):
 
 def load_and_print_class_metrics(class_csv_path):
     """
-    Carrega métricas por classe do CSV, seleciona apenas CBO, DIT e LCOM e imprime as primeiras linhas.
+    Loads class metrics from CSV, selects only CBO, DIT and LCOM and prints the first lines.
     """
-    print("\n[+] Lendo métricas por CLASSE (CBO, DIT, LCOM) ...")
+    print("\n[+] Reading CLASS metrics (CBO, DIT, LCOM) ...")
     df_class = pd.read_csv(class_csv_path)
 
-    # Colunas necessárias: identificação + métricas CBO, DIT e LCOM
+    # Required columns: identification + CBO, DIT and LCOM metrics
     class_columns = [
         'file', 'class', 'type',
         'cbo',   # Coupling Between Objects
@@ -147,29 +147,29 @@ def load_and_print_class_metrics(class_csv_path):
     ]
 
     available_class_cols = [col for col in class_columns if col in df_class.columns]
-    print(f"Métricas disponíveis: {available_class_cols}")
-    print(df_class[available_class_cols].head())  # Exibe as 5 primeiras linhas
+    print(f"Available metrics: {available_class_cols}")
+    print(df_class[available_class_cols].head())  # Show first 5 lines
 
 
 def process_multiple_repos(repo_list_csv, ck_jar_path, output_csv="all_class_metrics.csv"):
     """
-    Processa múltiplos repositórios e extrai apenas as métricas CBO, DIT e LCOM.
-    Salva o resultado em um único CSV consolidado.
+    Processes multiple repositories and extracts only CBO, DIT and LCOM metrics.
+    Saves the result in a single consolidated CSV.
     """
     df_all = []
 
     repos = pd.read_csv(repo_list_csv)
     for i, row in repos.iterrows():
         repo_url = row["url"]
-        print(f"\n=== [{i+1}/{len(repos)}] Processando {repo_url} ===")
+        print(f"\n=== [{i+1}/{len(repos)}] Processing {repo_url} ===")
         try:
             repo_path = clone_repo(repo_url)
             csv_paths = run_ck(ck_jar_path, repo_path)
 
-            # Carrega métricas de classe e filtra apenas as colunas necessárias
+            # Load class metrics and filter only required columns
             df_class = pd.read_csv(csv_paths["class"])
             
-            # Seleciona apenas as colunas de identificação e as métricas CBO, DIT e LCOM
+            # Select only identification columns and CBO, DIT and LCOM metrics
             required_columns = ['file', 'class', 'type', 'cbo', 'dit', 'lcom']
             available_columns = [col for col in required_columns if col in df_class.columns]
             
@@ -177,25 +177,25 @@ def process_multiple_repos(repo_list_csv, ck_jar_path, output_csv="all_class_met
             df_filtered["repo"] = f"{row['owner']}/{row['name']}"
             df_all.append(df_filtered)
             
-            print(f"[+] Extraídas {len(df_filtered)} classes com métricas CBO, DIT e LCOM")
+            print(f"[+] Extracted {len(df_filtered)} classes with CBO, DIT and LCOM metrics")
             
         except Exception as e:
-            print(f"[!] Falha em {repo_url}: {e}")
+            print(f"[!] Failed on {repo_url}: {e}")
             continue
 
-    # Consolida tudo
+    # Consolidate everything
     if df_all:
         df_final = pd.concat(df_all, ignore_index=True)
         df_final.to_csv(output_csv, index=False)
-        print(f"\n[✓] Arquivo salvo em {output_csv} com {len(df_final)} linhas contendo métricas CBO, DIT e LCOM.")
+        print(f"\n[✓] File saved in {output_csv} with {len(df_final)} lines containing CBO, DIT and LCOM metrics.")
     else:
-        print("[!] Nenhum dado foi processado com sucesso.")
+        print("[!] No data was processed successfully.")
 
 
 def process_multiple_repos_aggregated(repo_list_csv, ck_jar_path, output_csv="aggregated_repo_metrics.csv"):
     """
-    Processa múltiplos repositórios e agrega as métricas CBO, DIT e LCOM por repositório.
-    Salva estatísticas agregadas (média, mediana, etc.) em um CSV consolidado.
+    Processes multiple repositories and aggregates CBO, DIT and LCOM metrics by repository.
+    Saves aggregated statistics (mean, median, etc.) in a consolidated CSV.
     """
     repo_aggregated_data = []
 
@@ -203,49 +203,49 @@ def process_multiple_repos_aggregated(repo_list_csv, ck_jar_path, output_csv="ag
     for i, row in repos.iterrows():
         repo_url = row["url"]
         repo_name = f"{row['owner']}/{row['name']}"
-        print(f"\n=== [{i+1}/{len(repos)}] Processando {repo_url} ===")
+        print(f"\n=== [{i+1}/{len(repos)}] Processing {repo_url} ===")
         
         try:
             repo_path = clone_repo(repo_url)
             csv_paths = run_ck(ck_jar_path, repo_path)
             
-            # Verifica se o CK foi executado com sucesso
+            # Check if CK was executed successfully
             if csv_paths is None:
-                print(f"[!] CK Tool falhou para {repo_name}")
+                print(f"[!] CK Tool failed for {repo_name}")
                 continue
                 
-            # Verifica se o arquivo class.csv existe e tem conteúdo
+            # Check if class.csv file exists and has content
             if not os.path.exists(csv_paths["class"]):
-                print(f"[!] class.csv não encontrado para {repo_name}")
+                print(f"[!] class.csv not found for {repo_name}")
                 continue
 
-            # Carrega métricas de classe
+            # Load class metrics
             df_class = pd.read_csv(csv_paths["class"])
-            print(f"[+] Carregadas {len(df_class)} classes de {repo_name}")
+            print(f"[+] Loaded {len(df_class)} classes from {repo_name}")
             
-            # Se não há classes Java, pula o repositório
+            # If there are no Java classes, skip the repository
             if len(df_class) == 0:
-                print(f"[!] Nenhuma classe Java encontrada em {repo_name}")
+                print(f"[!] No Java classes found in {repo_name}")
                 continue
             
-            # Agrega métricas por repositório
+            # Aggregate metrics by repository
             repo_stats = aggregate_metrics_by_repo(df_class, repo_name)
             
             if repo_stats:
                 repo_aggregated_data.append(repo_stats)
-                print(f"[+] Métricas agregadas para {repo_name}: {repo_stats['total_classes']} classes")
+                print(f"[+] Aggregated metrics for {repo_name}: {repo_stats['total_classes']} classes")
                 
-                # Salva dados progressivamente para evitar perda em caso de interrupção
-                if len(repo_aggregated_data) % 10 == 0:  # A cada 10 repositórios
+                # Save data progressively to avoid loss in case of interruption
+                if len(repo_aggregated_data) % 10 == 0:  # Every 10 repositories
                     df_temp = pd.DataFrame(repo_aggregated_data)
                     df_temp.to_csv(f"temp_{output_csv}", index=False)
-                    print(f"[📁] Backup temporário salvo com {len(repo_aggregated_data)} repositórios")
+                    print(f"[📁] Temporary backup saved with {len(repo_aggregated_data)} repositories")
             
         except Exception as e:
-            print(f"[!] Falha em {repo_url}: {e}")
+            print(f"[!] Failed on {repo_url}: {e}")
             continue
         
-        # Cleanup: remove diretórios temporários
+        # Cleanup: remove temporary directories
         try:
             if 'repo_path' in locals():
                 parent_dir = os.path.dirname(repo_path)
@@ -256,112 +256,112 @@ def process_multiple_repos_aggregated(repo_list_csv, ck_jar_path, output_csv="ag
                 if os.path.exists(output_dir):
                     shutil.rmtree(output_dir)
         except:
-            pass  # Ignora erros de cleanup
+            pass  # Ignore cleanup errors
 
-    # Salva dados agregados finais
+    # Save final aggregated data
     if repo_aggregated_data:
         df_aggregated = pd.DataFrame(repo_aggregated_data)
         df_aggregated.to_csv(output_csv, index=False)
-        print(f"\n[✓] Métricas agregadas salvas em {output_csv} com {len(df_aggregated)} repositórios.")
+        print(f"\n[✓] Aggregated metrics saved in {output_csv} with {len(df_aggregated)} repositories.")
         
-        # Mostra preview das estatísticas
-        print(f"\n[📊] Preview das métricas agregadas:")
+        # Show statistics preview
+        print(f"\n[📊] Preview of aggregated metrics:")
         display_cols = ['repo', 'total_classes']
         for metric in ['cbo', 'dit', 'lcom']:
             if f'{metric}_mean' in df_aggregated.columns:
                 display_cols.append(f'{metric}_mean')
         print(df_aggregated[display_cols].head())
         
-        # Remove arquivo temporário se existe
+        # Remove temporary file if it exists
         temp_file = f"temp_{output_csv}"
         if os.path.exists(temp_file):
             os.remove(temp_file)
         
     else:
-        print("[!] Nenhum dado agregado foi gerado.")
+        print("[!] No aggregated data was generated.")
 
 
 def main():
-    print("== CK Metrics Extractor - Métricas CBO, DIT e LCOM ==")
+    print("== CK Metrics Extractor - CBO, DIT and LCOM Metrics ==")
     
-    # Opções de processamento
-    print("\n1. Processar múltiplos repositórios - métricas por CLASSE")
-    print("2. Processar múltiplos repositórios - métricas AGREGADAS por repositório")
-    print("3. Processar um único repositório")
-    choice = input("Escolha uma opção (1, 2 ou 3): ").strip()
+    # Processing options
+    print("\n1. Process multiple repositories - CLASS-level metrics")
+    print("2. Process multiple repositories - AGGREGATED metrics by repository")
+    print("3. Process a single repository")
+    choice = input("Choose an option (1, 2 or 3): ").strip()
     
     ck_jar_path = os.path.join("ck", "target", "ck-0.7.1-SNAPSHOT-jar-with-dependencies.jar")
     
     if not os.path.exists(ck_jar_path):
-        print(f"Erro: {ck_jar_path} não encontrado.")
-        print("Execute os comandos no README para baixar e compilar o CK Tool.")
+        print(f"Error: {ck_jar_path} not found.")
+        print("Run the commands in README to download and compile the CK Tool.")
         sys.exit(1)
     
     if choice in ["1", "2"]:
-        # Processar múltiplos repositórios
-        csv_file = input("Informe o caminho para o CSV com os repositórios (ex: repositories.csv): ").strip()
+        # Process multiple repositories
+        csv_file = input("Enter the path to the CSV file with repositories (ex: repositories.csv): ").strip()
         if not os.path.exists(csv_file):
-            print(f"Erro: arquivo {csv_file} não encontrado.")
+            print(f"Error: file {csv_file} not found.")
             sys.exit(1)
         
         if choice == "1":
-            # Métricas por classe
-            output_file = input("Nome do arquivo de saída (padrão: all_class_metrics.csv): ").strip()
+            # Class-level metrics
+            output_file = input("Output file name (default: all_class_metrics.csv): ").strip()
             if not output_file:
                 output_file = "all_class_metrics.csv"
             
-            print(f"\n[+] Processando repositórios (métricas por classe) do arquivo {csv_file}...")
+            print(f"\n[+] Processing repositories (class-level metrics) from file {csv_file}...")
             process_multiple_repos(csv_file, ck_jar_path, output_file)
             
         elif choice == "2":
-            # Métricas agregadas por repositório
-            output_file = input("Nome do arquivo de saída (padrão: aggregated_repo_metrics.csv): ").strip()
+            # Aggregated metrics by repository
+            output_file = input("Output file name (default: aggregated_repo_metrics.csv): ").strip()
             if not output_file:
                 output_file = "aggregated_repo_metrics.csv"
             
-            print(f"\n[+] Processando repositórios (métricas agregadas) do arquivo {csv_file}...")
+            print(f"\n[+] Processing repositories (aggregated metrics) from file {csv_file}...")
             process_multiple_repos_aggregated(csv_file, ck_jar_path, output_file)
         
     elif choice == "3":
-        # Processar um único repositório (modo original simplificado)
-        repo_url = input("Informe a URL do repositório GitHub: ").strip()
+        # Process a single repository (simplified original mode)
+        repo_url = input("Enter the GitHub repository URL: ").strip()
         
-        # Clona o repositório e executa o CK
+        # Clone repository and run CK
         repo_path = clone_repo(repo_url)
         csv_paths = run_ck(ck_jar_path, repo_path)
         
-        # Processa apenas métricas de classe com CBO, DIT e LCOM
+        # Process only class metrics with CBO, DIT and LCOM
         load_and_print_class_metrics(csv_paths['class'])
         
     else:
-        print("Opção inválida.")
+        print("Invalid option.")
         sys.exit(1)
 
 if __name__ == "__main__":
     main()
 
-# Baixe o CK Tool e monte o JAR file (ck/target/ck-0.7.1-SNAPSHOT-jar-with-dependencies.jar):
+# Download the CK Tool and build the JAR file (ck/target/ck-0.7.1-SNAPSHOT-jar-with-dependencies.jar):
 # git clone https://github.com/mauricioaniche/ck.git
 # cd ck
 # mvn clean package
-# Documentação: https://github.com/mauricioaniche/ck
+# Documentation: https://github.com/mauricioaniche/ck
 
-# Instale as dependências necessárias deste projeto:
+# Install the necessary dependencies for this project:
 # pip install gitpython pandas requests
 
-# Execute o script:
+# Run the script:
 # python ck_metrics_extractor.py
 
-# Repositórios de exemplo:
-# - Único: https://github.com/spring-projects/spring-petclinic
-# - Múltiplos: use repositories.csv com colunas: url, owner, name
+# Example repositories:
+# - Single: https://github.com/spring-projects/spring-petclinic
+# - Multiple: use repositories.csv with columns: url, owner, name
 
-# Opções de saída:
-# 1. Métricas por CLASSE: CSV com uma linha por classe (all_class_metrics.csv)
-# 2. Métricas AGREGADAS: CSV com uma linha por repositório com estatísticas (aggregated_repo_metrics.csv)
-#    - Inclui: média, mediana, desvio padrão, min, max, quartis para cada métrica
+# Output options:
+# 1. CLASS-level metrics: CSV with one line per class (all_class_metrics.csv)
+# 2. AGGREGATED metrics: CSV with one line per repository with statistics (aggregated_repo_metrics.csv)
+#    - Includes: mean, median, standard deviation, min, max, quartiles for each metric
 
-# Métricas extraídas (apenas):
-# - CBO: Coupling Between Objects (Acoplamento entre Objetos)
-# - DIT: Depth of Inheritance Tree (Profundidade da Árvore de Herança)
-# - LCOM: Lack of Cohesion of Methods (Falta de Coesão dos Métodos)
+# Extracted metrics (only):
+# - CBO: Coupling Between Objects
+# - DIT: Depth of Inheritance Tree
+# - LCOM: Lack of Cohesion of Methods
