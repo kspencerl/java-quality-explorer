@@ -46,30 +46,38 @@ def clone_repo(repo_url, dest_dir='repo'):
         sys.exit(1)
     return extracted_dir
 
-def run_ck(jar_path, repo_dir, output_dir='ck_output'):
+def run_ck(jar_path, repo_dir, output_dir=None):
     """
     Executa o CK Tool e retorna os caminhos para os arquivos .csv gerados.
     """
+    # Cria um diretório único para cada repositório se não especificado
+    if output_dir is None:
+        import time
+        timestamp = int(time.time())
+        output_dir = f'ck_output_{timestamp}'
+    
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
     os.makedirs(output_dir)
 
     print(f"[+] Executando CK Tool nas fontes em {repo_dir} ...")
+    print(f"[+] Salvando resultados em {output_dir} ...")
     
     cmd = [
         'java', '-jar', jar_path,
         repo_dir,
         'true',      # usar JARs
         '0',         # max files per partition = automático
-        'true',      # extrair métricas de variáveis e campos
+        'false',     # NÃO extrair métricas de variáveis e campos (só classes)
         output_dir + os.sep
     ]
 
     try:
-        subprocess.run(cmd, check=True)
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
-        print("Erro ao executar o CK:", e)
-        sys.exit(1)
+        print(f"Erro ao executar o CK: {e}")
+        print(f"Stderr: {e.stderr}")
+        return None
 
     # Caminhos para os arquivos gerados
     files = {
@@ -81,20 +89,8 @@ def run_ck(jar_path, repo_dir, output_dir='ck_output'):
 
     # Confirma se class.csv existe
     if not os.path.exists(files['class']):
-        print("Erro: class.csv não encontrado.")
-        sys.exit(1)
-
-    # Confirma se field.csv existe (aviso)
-    if not os.path.exists(files['field']):
-        print("Aviso: field.csv não encontrado. Métricas de campos não estarão disponíveis.")
-
-    # Confirma se method.csv existe (aviso)
-    if not os.path.exists(files['method']):
-        print("Aviso: method.csv não encontrado. Métricas por método não estarão disponíveis.")
-
-    # Confirma se variable.csv existe (aviso)
-    if not os.path.exists(files['variable']):
-        print("Aviso: variable.csv não encontrado. Métricas de variáveis não estarão disponíveis.")
+        print(f"Erro: class.csv não encontrado em {output_dir}")
+        return None
 
     return files
 
@@ -212,12 +208,25 @@ def process_multiple_repos_aggregated(repo_list_csv, ck_jar_path, output_csv="ag
         try:
             repo_path = clone_repo(repo_url)
             csv_paths = run_ck(ck_jar_path, repo_path)
-            print("csv_paths:", csv_paths)
-            print("**************************")
+            
+            # Verifica se o CK foi executado com sucesso
+            if csv_paths is None:
+                print(f"[!] CK Tool falhou para {repo_name}")
+                continue
+                
+            # Verifica se o arquivo class.csv existe e tem conteúdo
+            if not os.path.exists(csv_paths["class"]):
+                print(f"[!] class.csv não encontrado para {repo_name}")
+                continue
 
             # Carrega métricas de classe
             df_class = pd.read_csv(csv_paths["class"])
             print(f"[+] Carregadas {len(df_class)} classes de {repo_name}")
+            
+            # Se não há classes Java, pula o repositório
+            if len(df_class) == 0:
+                print(f"[!] Nenhuma classe Java encontrada em {repo_name}")
+                continue
             
             # Agrega métricas por repositório
             repo_stats = aggregate_metrics_by_repo(df_class, repo_name)
@@ -225,12 +234,31 @@ def process_multiple_repos_aggregated(repo_list_csv, ck_jar_path, output_csv="ag
             if repo_stats:
                 repo_aggregated_data.append(repo_stats)
                 print(f"[+] Métricas agregadas para {repo_name}: {repo_stats['total_classes']} classes")
+                
+                # Salva dados progressivamente para evitar perda em caso de interrupção
+                if len(repo_aggregated_data) % 10 == 0:  # A cada 10 repositórios
+                    df_temp = pd.DataFrame(repo_aggregated_data)
+                    df_temp.to_csv(f"temp_{output_csv}", index=False)
+                    print(f"[📁] Backup temporário salvo com {len(repo_aggregated_data)} repositórios")
             
         except Exception as e:
             print(f"[!] Falha em {repo_url}: {e}")
             continue
+        
+        # Cleanup: remove diretórios temporários
+        try:
+            if 'repo_path' in locals():
+                parent_dir = os.path.dirname(repo_path)
+                if os.path.exists(parent_dir):
+                    shutil.rmtree(parent_dir)
+            if 'csv_paths' in locals() and csv_paths:
+                output_dir = os.path.dirname(csv_paths["class"])
+                if os.path.exists(output_dir):
+                    shutil.rmtree(output_dir)
+        except:
+            pass  # Ignora erros de cleanup
 
-    # Salva dados agregados
+    # Salva dados agregados finais
     if repo_aggregated_data:
         df_aggregated = pd.DataFrame(repo_aggregated_data)
         df_aggregated.to_csv(output_csv, index=False)
@@ -238,7 +266,16 @@ def process_multiple_repos_aggregated(repo_list_csv, ck_jar_path, output_csv="ag
         
         # Mostra preview das estatísticas
         print(f"\n[📊] Preview das métricas agregadas:")
-        print(df_aggregated[['repo', 'total_classes', 'cbo_mean', 'dit_mean', 'lcom_mean']].head())
+        display_cols = ['repo', 'total_classes']
+        for metric in ['cbo', 'dit', 'lcom']:
+            if f'{metric}_mean' in df_aggregated.columns:
+                display_cols.append(f'{metric}_mean')
+        print(df_aggregated[display_cols].head())
+        
+        # Remove arquivo temporário se existe
+        temp_file = f"temp_{output_csv}"
+        if os.path.exists(temp_file):
+            os.remove(temp_file)
         
     else:
         print("[!] Nenhum dado agregado foi gerado.")
