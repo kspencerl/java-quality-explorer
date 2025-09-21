@@ -3,5 +3,5 @@ gitpython
 gql
 python-dotenv
 requests
-matplotlib==3.7.1
-seaborn==0.12.2
+matplotlib
+seaborn
