@@ -1,4 +1,4 @@
-# 📝 Relatório Final - LAB02 (versão atualizada com hipóteses quantitativas)
+# 📝 Relatório Final - LAB02 
 
 ## 1. Informações do grupo
 - **🎓 Curso:** Engenharia de Software  
