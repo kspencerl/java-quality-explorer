@@ -66,10 +66,28 @@ p-valor: Indica se a correlação é estatisticamente significativa:
 - p < 0.05: Correlação significativa (confiável)
 - p ≥ 0.05: Correlação não significativa (pode ser coincidência)
 
+ ### 4.6 Métricas Utilizadas
+
+#### Métricas de Laboratório (LM)
+| Código | Métrica | Descrição |
+|--------|---------|-----------|
+| LM01 | Idade do Repositório (anos) | Tempo desde a criação até 21/09/2025 |
+| LM02 | Número de Releases | Total de versões oficiais publicadas |
+| LM03 | Número de Estrelas | Popularidade medida por stargazerCount |
+| LM04 | Tamanho (LOC) | Linhas de código  |
+
+#### Métricas de Qualidade (QM)
+| Código | Métrica | Descrição |
+|--------|---------|-----------|
+| QM01 | CBO (Coupling Between Objects) | Acoplamento entre classes |
+| QM02 | DIT (Depth Inheritance Tree) | Profundidade da árvore de herança |
+| QM03 | LCOM (Lack of Cohesion of Methods) | Falta de coesão entre métodos |
+
 
 ---
 
 ## 5. Resultados por Questão de Pesquisa (RQ)
+
 
 ### RQ01 — Popularidade (stars) vs métricas de qualidade  
 
@@ -136,7 +154,7 @@ p-valor: Indica se a correlação é estatisticamente significativa:
 
 ---
 
-## 6. hipóteses quantitativas
+## 6. hipóteses informais
 
 1. **H1 — Repositórios mais populares (mais estrelas) têm mais releases.**  
    *Teste:* Spearman (stars vs releases).
@@ -183,6 +201,98 @@ Interpretação: Não há relação significativa entre popularidade e profundid
 <img width="2942" height="2062" alt="image" src="https://github.com/user-attachments/assets/b42252fb-f79b-4744-929a-c0d6c715a2dd" />
 
 ---
+
+## 7. Gráficos adicionais
+
+### 1. Histogramas das Métricas 
+
+### O que mostra:
+Os histogramas apresentam a **distribuição de frequência** de cada métrica analisada, revelando como os valores se comportam ao longo do dataset.
+
+### Como interpretar:
+- **Eixo X:** Valores da métrica (stars, releases, idade, etc.)
+- **Eixo Y:** Frequência (quantos repositórios têm aquele valor)
+- **Formato da distribuição:** Indica se os dados são simétricos, assimétricos ou têm múltiplos picos
+
+### Insights que revela:
+- **Distribuição normal:** Indica dados bem balanceados
+- **Assimetria positiva (cauda longa à direita):** Poucos repositórios com valores muito altos
+- **Múltiplos picos:** Pode indicar diferentes grupos ou categorias de projetos
+- **Concentração de valores:** A maioria dos projetos se concentra em determinadas faixas
+
+<img width="4146" height="2932" alt="image" src="https://github.com/user-attachments/assets/74383120-7e04-4819-9032-102fb23cb7e7" />
+
+### 2. Heatmap de Correlações 
+
+### O que mostra:
+Uma **matriz visual** que apresenta as correlações de Spearman entre todas as métricas simultaneamente, usando cores para facilitar a identificação de padrões.
+
+### Como interpretar:
+- **Cores vermelhas:** Correlações negativas (quando uma métrica aumenta, a outra diminui)
+- **Cores azuis:** Correlações positivas (ambas métricas aumentam/diminuem juntas)
+- **Cores neutras (branco):** Correlações fracas ou inexistentes
+- **Intensidade da cor:** Força da correlação (mais intensa = correlação mais forte)
+
+### Insights que revela:
+- **Clusters de métricas relacionadas:** Grupos de variáveis que se comportam similarmente
+- **Métricas independentes:** Variáveis que não se influenciam mutuamente
+- **Padrões globais:** Visão holística das relações entre processo e qualidade
+- **Redundâncias:** Métricas que medem aspectos muito similares
+
+<img width="4447" height="2948" alt="image" src="https://github.com/user-attachments/assets/abf44560-2106-442b-9fa2-770a4dc4291b" />
+
+### 3. Boxplots para Detecção de Outliers (`boxplots_metricas.png`)
+
+### O que mostra:
+Representa a **distribuição estatística** de cada métrica através de quartis, mediana e outliers, permitindo identificar valores extremos.
+
+### Como interpretar:
+- **Caixa central:** Contém 50% dos dados (entre Q1 e Q3)
+- **Linha central:** Mediana (valor que divide os dados ao meio)
+- **Bigodes:** Estendem-se até 1.5 vezes a distância interquartílica
+- **Pontos isolados:** Outliers (valores extremamente altos ou baixos)
+
+### Insights que revela:
+- **Presença de valores extremos:** Repositórios com características muito diferentes da maioria
+- **Simetria dos dados:** Se a mediana está centralizada na caixa
+- **Variabilidade:** Tamanho da caixa indica dispersão dos dados
+- **Robustez das análises:** Outliers podem influenciar correlações
+<img width="2899" height="2353" alt="image" src="https://github.com/user-attachments/assets/7ddfc4a6-6820-4b18-9229-4f54aaef20c3" />
+
+### 4. Análise Comparativa 
+
+### O que mostra:
+Quatro análises específicas que exploram **relações categóricas** e **comparações segmentadas** entre as métricas.
+
+### Subgráficos incluídos:
+
+#### 4.1 CBO por Quartil de Popularidade
+- **O que mostra:** Como o acoplamento varia entre repositórios de diferentes níveis de popularidade
+- **Como interpretar:** Compara a distribuição de CBO entre os 25% menos populares (Q1) até os 25% mais populares (Q4)
+
+#### 4.2 LCOM por Categoria de Idade  
+- **O que mostra:** Como a coesão varia entre projetos jovens, médios e maduros
+- **Como interpretar:** Revela se projetos mais antigos realmente têm pior coesão
+
+#### 4.3 Releases vs Tamanho do Projeto
+- **O que mostra:** Relação entre atividade de releases e tamanho do código (em escala logarítmica)
+- **Como interpretar:** Identifica se projetos maiores tendem a ter mais ou menos releases
+
+#### 4.4 Distribuição das Métricas de Qualidade
+- **O que mostra:** Comparação direta entre as três métricas de qualidade (CBO, DIT, LCOM)
+- **Como interpretar:** Revela qual métrica tem maior variabilidade e valores típicos
+
+### Insights que revela:
+- **Diferenças categóricas:** Como diferentes grupos de repositórios se comportam
+- **Tendências não-lineares:** Relações que podem não aparecer em correlações simples
+- **Segmentação do mercado:** Diferentes "tipos" de projetos no ecossistema Java
+- **Validação das hipóteses:** Confirmação visual das tendências encontradas estatisticamente
+
+<img width="4960" height="2942" alt="image" src="https://github.com/user-attachments/assets/9948b881-16cf-439d-b42b-964cec2f647a" />
+
+
+
+
 
 ## 7. Estatísticas descritivas
 
