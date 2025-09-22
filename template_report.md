@@ -1,11 +1,11 @@
-# 📝 Template de Relatório Técnico de Laboratório
+# 📝 Relatório Final - LAB02 (versão atualizada com hipóteses quantitativas)
 
 ## 1. Informações do grupo
-- **🎓 Curso:** Engenharia de Software
-- **📘 Disciplina:** Laboratório de Experimentação de Software
-- **🗓 Período:** 6° Período
-- **👨‍🏫 Professor(a):** Prof. Dr. João Paulo Carneiro Aramuni
-- **👥 Membros do Grupo:** [Arthur Ferreira, Kimberly Liz, Renato Cazzoletti]
+- **🎓 Curso:** Engenharia de Software  
+- **📘 Disciplina:** Laboratório de Experimentação de Software  
+- **🗓 Período:** 6° Período  
+- **👨‍🏫 Professor(a):** Prof. Dr. João Paulo Carneiro Aramuni  
+- **👥 Membros do Grupo:** Arthur Ferreira, Kimberly Liz, Renato Cazzoletti
 
 ---
 
@@ -14,271 +14,202 @@ Este laboratório tem como objetivo analisar aspectos da qualidade de repositór
 
 A análise será realizada nos top-1.000 repositórios Java mais populares do GitHub, utilizando a ferramenta CK (Code Metrics) para calcular métricas de qualidade de código, correlacionando-as com métricas de processo de desenvolvimento.
 
-### 💡 Hipóteses Informais - Informal Hypotheses (IH):
-
-- **IH01:** Repositórios mais populares (maior número de estrelas) tendem a apresentar melhor qualidade de código, com menores valores de acoplamento (CBO) devido a maior revisão por pares.
-- **IH02:** Sistemas mais maduros (maior idade) apresentam maior profundidade de herança (DIT), indicando evolução arquitetural ao longo do tempo.
-- **IH03:** Repositórios com maior atividade (mais releases) mantêm melhor coesão (menores valores de LCOM), devido à refatoração contínua.
-- **IH04:** Projetos maiores (maior LOC) tendem a ter maior acoplamento (CBO) devido à complexidade inerente do sistema.
-- **IH05:** Repositórios populares apresentam correlação positiva entre tamanho e número de releases, indicando desenvolvimento ativo.
 
 ---
 
 ## 3. Tecnologias e ferramentas utilizadas
-- **💻 Linguagem de Programação:** Python 3.x
-- **🛠 Frameworks/Bibliotecas:** Pandas, Matplotlib, Seaborn, GitPython, GQL (GraphQL)
+- **💻 Linguagem:** Python 3.x  
+- **Bibliotecas:** pandas, numpy, matplotlib, scipy
 - **🌐 APIs utilizadas:** GitHub GraphQL API
-- **📦 Dependências:** requests, python-dotenv, gql
-- **⚙️ Ferramenta de Análise:** CK Tool (Code Metrics)
+- **Ferramenta de métricas:** CK (Coupling Between Objects, Depth Inheritance Tree, Lack of Cohesion of Methods)  
+- **Fonte de dados:** CSVs com métricas agregadas por repositório.
 
 ---
 
 ## 4. Metodologia
 
-### 4.1 Coleta de dados
-- Foram coletados dados dos top-1.000 repositórios Java mais populares do GitHub utilizando a GitHub GraphQL API.
-- Critérios de seleção: repositórios com linguagem primária Java, ordenados por número de estrelas (stargazerCount).
-- Paginação implementada com PAGE_SIZE = 25 para otimizar as requisições à API.
+### 4.1 Pré-processamento  
+- Remoção de entradas inconsistentes ou incompletas (ex.: repositórios com métricas nulas ou negativas).
+- Normalização de formatos de datas (para cálculo de idade dos repositórios).
+- Verificação de outliers extremos em métricas como LOC e LCOM (registrados mas não excluídos, pois refletem a realidade de projetos muito grandes).
 
+ 
 ### 4.2 Filtragem e paginação
 - Utilizada paginação da API GitHub para coletar grandes volumes de dados de forma eficiente.
 - Implementado sistema de retry com backoff exponencial para lidar com rate limits da API.
-- ⏱ Tempo médio de coleta: aproximadamente 15-20 minutos para 1.000 repositórios.
-
-### 4.3 Normalização e pré-processamento
+- Tempo médio de coleta: aproximadamente 5 horas e 30 minutos para 1.000 repositórios.
 - Os dados foram organizados em formato CSV para facilitar análise posterior.
-- Tratamento de dados ausentes e normalização de datas (formato ISO 8601).
-- Cálculo da idade dos repositórios baseado na data de criação.
 
-### 4.4 Cálculo de métricas
+### 4.2 Cálculo de métricas de processo  
+- **Popularidade:** número de estrelas do repositório.  
+- **Atividade:** número de releases.  
+- **Maturidade:** idade em anos (diferença entre data de criação e 21/09/2025).  
+- **Tamanho:** linhas de código (LOC). 
 
-#### Métricas de Processo:
-- **Popularidade:** Número de estrelas (stargazerCount)
-- **Tamanho:** Linhas de código (LOC) e linhas de comentários
-- **Atividade:** Número de releases
-- **Maturidade:** Idade em anos (calculada a partir de createdAt)
+### 4.4 Análises realizadas  
+- Estatísticas descritivas (média, mediana, desvio-padrão) para cada métrica.  
+- **Correlação de Spearman** para testar associações entre métricas de processo e qualidade.  
+- **Visualizações gráficas** (scatterplots) para apoiar a interpretação.
 
-#### Métricas de Qualidade (CK Tool):
-- **CBO:** Coupling Between Objects - mede acoplamento entre classes
-- **DIT:** Depth of Inheritance Tree - profundidade da árvore de herança
-- **LCOM:** Lack of Cohesion of Methods - falta de coesão entre métodos
+###  4.5 Interpretação das estatísticas
+As análises utilizaram duas principais medidas estatísticas:
+ρ de Spearman (Rho de Spearman): Medida de correlação que indica a força e direção da relação entre duas variáveis:
 
-### 4.5 Automação da coleta
-- Desenvolvido script Python para automação do processo de:
-  1. Clonagem de repositórios via download de ZIP
-  2. Execução da ferramenta CK em cada repositório
-  3. Consolidação dos resultados em arquivos CSV
-  4. Sumarização das métricas por repositório
+-  -1 a -0.7: Correlação negativa forte
+- -0.7 a -0.3: Correlação negativa moderada
+- -0.3 a 0.3: Correlação fraca ou inexistente
+- 0.3 a 0.7: Correlação positiva moderada
+- 0.7 a 1: Correlação positiva forte
+
+p-valor: Indica se a correlação é estatisticamente significativa:
+
+- p < 0.05: Correlação significativa (confiável)
+- p ≥ 0.05: Correlação não significativa (pode ser coincidência)
+
 
 ---
 
-## 5. Questões de pesquisa
+## 5. Resultados por Questão de Pesquisa (RQ)
 
-Liste as questões de pesquisa que guiaram o estudo, com suas métricas associadas:
+### RQ01 — Popularidade (stars) vs métricas de qualidade  
 
-**🔍 Questões de Pesquisa - Research Questions (RQs):**
+- Stars vs CBO: ρ = -0.001, p = 0.969 (correlação muito fraca, não significativa)
+- Stars vs DIT: ρ = -0.018, p = 0.596 (correlação muito fraca, não significativa)
+- Stars vs LCOM: ρ = 0.034, p = 0.324 (correlação muito fraca, não significativa)
 
-| RQ   | Pergunta | Métrica utilizada | Código da Métrica |
-|------|----------|-----------------|-----------------|
-| RQ01 | Qual a relação entre a popularidade dos repositórios e as suas características de qualidade? | ⭐ Número de Estrelas vs CBO, DIT, LCOM | LM01, QM01, QM02, QM03 |
-| RQ02 | Qual a relação entre a maturidade dos repositórios e as suas características de qualidade? | 🕰 Idade do Repositório vs CBO, DIT, LCOM | LM02, QM01, QM02, QM03 |
-| RQ03 | Qual a relação entre a atividade dos repositórios e as suas características de qualidade? | 📦 Número de Releases vs CBO, DIT, LCOM | LM03, QM01, QM02, QM03 |
-| RQ04 | Qual a relação entre o tamanho dos repositórios e as suas características de qualidade? | 📏 LOC vs CBO, DIT, LCOM | LM04, QM01, QM02, QM03 |
+- Correlações fracas/nulas.  
+- Não há evidência de que repositórios mais populares tenham melhor qualidade interna.
 
----
+<img width="2941" height="2062" alt="image" src="https://github.com/user-attachments/assets/cf109f08-1844-4666-a234-c6dc62fdf47f" />
+<img width="2942" height="2062" alt="image" src="https://github.com/user-attachments/assets/b643c039-ff00-46cc-8704-fb0b30d4fbdc" />
+<img width="2943" height="2062" alt="image" src="https://github.com/user-attachments/assets/3617aacf-b134-4b6d-a624-6308808df07f" />
 
-## 6. Resultados
 
-Apresente os resultados obtidos, com tabelas e gráficos sempre que possível.
 
 ---
 
-### 6.1 Métricas
+### RQ02 — Maturidade (idade) vs métricas de qualidade  
 
-Inclua métricas relevantes de repositórios do GitHub, separando **métricas do laboratório** e **métricas adicionais trazidas pelo grupo**:
+- Age vs CBO: ρ = -0.002, p = 0.946 (correlação muito fraca, não significativa)
+- Age vs DIT: ρ = 0.280, p = 1.34e-16 (correlação fraca positiva, significativa)
+- Age vs LCOM: ρ = 0.177, p = 2.16e-07 (correlação fraca positiva, significativa)
 
-#### 📊 Métricas de Laboratório - Lab Metrics (LM)
-| Código | Métrica | Descrição |
-|--------|--------|-----------|
-| LM01 | 🕰 Idade do Repositório (anos) | Tempo desde a criação do repositório até o momento atual, medido em anos. |
-| LM02 | ✅ Pull Requests Aceitas | Quantidade de pull requests que foram aceitas e incorporadas ao repositório. |
-| LM03 | 📦 Número de Releases | Total de versões ou releases oficiais publicadas no repositório. |
-| LM04 | ⏳ Tempo desde a Última Atualização (dias) | Número de dias desde a última modificação ou commit no repositório. |
-| LM05 | 📋 Percentual de Issues Fechadas (%) | Proporção de issues fechadas em relação ao total de issues criadas, em percentual. |
-| LM06 | ⭐ Número de Estrelas | Quantidade de estrelas recebidas no GitHub, representando interesse ou popularidade. |
-| LM07 | 🍴 Número de Forks | Número de forks, indicando quantas vezes o repositório foi copiado por outros usuários. |
-| LM08 | 📏 Tamanho do Repositório (LOC) | Total de linhas de código (Lines of Code) contidas no repositório. |
+- Idade correlaciona positivamente com DIT e LCOM.  
+- Projetos mais antigos tendem a apresentar hierarquias mais profundas e menor coesão.
 
-#### 💡 Métricas adicionais trazidas pelo grupo - Additional Metrics (AM)
-| Código | Métrica | Descrição |
-|------|--------|------------|
-| AM01 | 💻 Linguagem Primária | Linguagem de programação principal do repositório (ex.: Python, JavaScript, Java) |
-| AM02 | 🔗 Forks vs Pull Requests Aceitas | Relação entre número de forks e pull requests aceitas |
-| AM03 | 📈 Evolução Temporal | Evolução temporal de releases e pull requests aceitas |
-| AM04 | 🌟 Big Numbers | Métricas com valores expressivos (commits, branches, stars, releases) |
+<img width="2949" height="2062" alt="image" src="https://github.com/user-attachments/assets/d0f011fb-9327-4a90-a4c4-53db74dafd14" />
+<img width="2950" height="2062" alt="image" src="https://github.com/user-attachments/assets/1f6c08f4-79b6-49e6-8995-f309e6457c11" />
+<img width="2950" height="2062" alt="image" src="https://github.com/user-attachments/assets/744c38fc-03cd-4b9b-835c-c18e8e67bee9" />
 
-> Obs.: Adapte ou acrescente métricas conforme o seu dataset.
 
 ---
 
-### 6.2 Distribuição por categoria
+### RQ03 — Atividade (número de releases) vs métricas de qualidade  
 
-Para métricas categóricas, como linguagem de programação, faça contagens e tabelas de frequência:
+- Releases vs CBO: ρ = 0.386, p = 2.86e-31 (correlação moderada positiva, significativa)
+- Releases vs DIT: ρ = 0.257, p = 3.37e-14 (correlação fraca positiva, significativa)
+- Releases vs LCOM: ρ = 0.339, p = 4.13e-24 (correlação moderada positiva, significativa)
 
-| Linguagem | Quantidade de Repositórios |
-|---------------|------------------------|
-| 🐍 Python     | 350                    |
-| 💻 JavaScript | 300                    |
-| ☕ Java        | 200                    |
-| 📦 Outros     | 150                    |
+- Correlações positivas com CBO e LCOM.  
+- Projetos com mais releases apresentam maior acoplamento e menor coesão.
+
+<img width="2949" height="2062" alt="image" src="https://github.com/user-attachments/assets/521510a4-14ac-42b7-8d46-83b4ee20fbac" />
+<img width="2950" height="2062" alt="image" src="https://github.com/user-attachments/assets/f593c224-2bc9-4824-90d3-7f481d5bbb3a" />
+<img width="2950" height="2062" alt="image" src="https://github.com/user-attachments/assets/ad757d40-bb32-4989-8c56-b50102d462c3" />
+
 
 ---
 
-### 6.3 Relação das RQs com as Métricas
+### RQ04 — Tamanho (LOC) vs métricas de qualidade  
 
-| RQ   | Pergunta | Métrica utilizada | Código |
-|------|----------|-----------------|--------|
-| RQ01 | Sistemas populares são maduros/antigos? | 🕰 Idade do Repositório (calculado a partir da data de criação) | LM01 |
-| RQ02 | Sistemas populares recebem muita contribuição externa? | ✅ Total de Pull Requests Aceitas | LM02 |
-| RQ03 | Sistemas populares lançam releases com frequência? | 📦 Total de Releases | LM03 |
-| RQ04 | Sistemas populares são atualizados com frequência? | ⏳ Tempo desde a Última Atualização (dias) | LM04 |
-| RQ05 | Sistemas populares são escritos nas linguagens mais populares? | 💻 Linguagem primária de cada repositório | AM01 |
-| RQ06 | Sistemas populares possuem alto percentual de issues fechadas? | 📋 Razão entre número de issues fechadas pelo total de issues | LM05 |
-| RQ07 | Sistemas escritos em linguagens mais populares recebem mais contribuição externa, lançam mais releases e são atualizados com mais frequência? | ✅ Pull Requests Aceitas, 📦 Número de Releases, ⏳ Tempo desde a Última Atualização, 💻 Linguagem primária | LM02, LM03, LM04, AM01 |
+- LOC vs CBO: ρ = 0.291, p = 6.47e-18 (correlação fraca positiva, significativa)
+- LOC vs DIT: ρ = 0.258, p = 2.64e-14 (correlação fraca positiva, significativa)
+- LOC vs LCOM: ρ = 0.327, p = 2.1e-22 (correlação moderada positiva, significativa)
+
+- Correlações positivas com CBO e LCOM.  
+- Projetos maiores tendem a ser mais acoplados e menos coesos.
+
+<img width="2949" height="2062" alt="image" src="https://github.com/user-attachments/assets/6f7391ce-96e0-4cf0-8357-81648bbe8834" />
+<img width="2950" height="2062" alt="image" src="https://github.com/user-attachments/assets/4fe96523-bc3e-42b5-b45f-9e598cfd73ac" />
+<img width="2950" height="2062" alt="image" src="https://github.com/user-attachments/assets/47a09ada-de4d-4679-a198-c9d89f16cff1" />
+
 
 ---
 
-### 6.4 Sugestões de gráficos
+## 6. hipóteses quantitativas
 
-Para criar visualizações das métricas, recomenda-se utilizar como referência o projeto **Seaborn Samples**:  
-- 🔗 Repositório: [Projeto Seaborn Samples](https://github.com/joaopauloaramuni/laboratorio-de-experimentacao-de-software/tree/main/PROJETOS/Projeto%20Seaborn%20Samples)
+1. **H1 — Repositórios mais populares (mais estrelas) têm mais releases.**  
+   *Teste:* Spearman (stars vs releases).
 
-- **📊 Histograma**: `grafico_histograma.png` → distribuição de idade, PRs aceitas ou estrelas.  
-- **📈 Boxplot**: `grafico_boxplot.png` → dispersão de métricas como forks, issues fechadas ou LOC.  
-- **📊 Gráfico de Barras**: `grafico_barras.png` → comparação de métricas entre linguagens.  
-- **🥧 Gráfico de Pizza**: `grafico_pizza.png` → percentual de repositórios por linguagem.  
-- **📈 Gráfico de Linha**: `grafico_linha.png` → evolução de releases ou PRs ao longo do tempo.  
-- **🔹 Scatterplot / Dispersão**: `grafico_dispersao.png` → relação entre estrelas e forks.  
-- **🌡 Heatmap**: `grafico_heatmap.png` → correlação entre métricas (idade, PRs, stars, forks, issues).  
-- **🔗 Pairplot**: `grafico_pairplot.png` → análise de múltiplas métricas simultaneamente.  
-- **🎻 Violin Plot**: `grafico_violin.png` → distribuição detalhada de métricas por subgrupo.  
-- **📊 Barras Empilhadas**: `grafico_barras_empilhadas.png` → comparação de categorias dentro de métricas.
+Resultado: ρ = 0.108, p = 0.00167 (correlação fraca positiva, significativa)
+Interpretação: Existe uma correlação fraca mas significativa entre popularidade e atividade de releases. Repositórios mais populares tendem a ter ligeiramente mais releases, o que pode refletir maior engajamento da comunidade ou pressão por atualizações.
 
-> 💡 Dica: combine tabelas e gráficos para facilitar a interpretação e evidenciar padrões nos dados.
+  <img width="2943" height="2062" alt="image" src="https://github.com/user-attachments/assets/b0197965-fadb-4830-9645-2bc380281464" />
 
-### 6.5 Estatísticas Descritivas
 
-Apresente as estatísticas descritivas das métricas analisadas, permitindo uma compreensão mais detalhada da distribuição dos dados.
+3. **H2 — Repositórios mais antigos apresentam maior LOC.**  
+   *Teste:* Spearman (idade vs LOC).
 
-| Métrica | Código | Média | Mediana | Moda | Desvio Padrão | Mínimo | Máximo |
-|---------|--------|------|--------|-----|---------------|--------|--------|
-| 🕰 Idade do Repositório (anos) | LM01 | X | Y | Z | A | B | C |
-| ✅ Pull Requests Aceitas | LM02 | X | Y | Z | A | B | C |
-| 📦 Número de Releases | LM03 | X | Y | Z | A | B | C |
-| ⏳ Tempo desde a Última Atualização (dias) | LM04 | X | Y | Z | A | B | C |
-| 📋 Percentual de Issues Fechadas (%) | LM05 | X | Y | Z | A | B | C |
-| ⭐ Número de Estrelas (Stars) | LM06 | X | Y | Z | A | B | C |
-| 🍴 Número de Forks | LM07 | X | Y | Z | A | B | C |
-| 📏 Tamanho do Repositório (LOC) | LM08 | X | Y | Z | A | B | C |
+Resultado: ρ = 0.102, p = 0.00302 (correlação fraca positiva, significativa)
+Interpretação: Projetos mais antigos tendem a ser maiores, confirmando a hipótese de que sistemas crescem ao longo do tempo com adição de funcionalidades e melhorias.
 
-> 💡 Dica: Inclua gráficos como histogramas ou boxplots junto com essas estatísticas para facilitar a interpretação.
+ <img width="2950" height="2062" alt="image" src="https://github.com/user-attachments/assets/b52bd800-8e34-4b7d-847f-a659f6445273" />
+ 
 
----
+5. **H3 — Projetos maiores (LOC) têm maior CBO.**  
+   *Teste:* Spearman (LOC vs CBO).
 
-## 7. Discussão
+Resultado: ρ = 0.291, p = 6.47e-18 (correlação fraca positiva, significativa)
+Interpretação: Sistemas maiores apresentam maior acoplamento entre objetos, confirmando que o crescimento do sistema está associado ao aumento da complexidade estrutural.
 
-Nesta seção, compare os resultados obtidos com as hipóteses informais levantadas pelo grupo no início do experimento.
+<img width="2949" height="2062" alt="image" src="https://github.com/user-attachments/assets/76e316f2-a991-4aa2-9738-62a39240fb55" />
 
-- **✅ Confirmação ou refutação das hipóteses**: identifique quais hipóteses foram confirmadas pelos dados e quais foram refutadas.  
-- **❌ Explicações para resultados divergentes**: caso algum resultado seja diferente do esperado, tente levantar possíveis causas ou fatores que possam ter influenciado.  
-- **🔍 Padrões e insights interessantes**: destaque tendências ou comportamentos relevantes observados nos dados que não haviam sido previstos nas hipóteses.  
-- **📊 Comparação por subgrupos (opcional)**: se houver segmentação dos dados (ex.: por linguagem de programação, tamanho do repositório), discuta como os resultados se comportam em cada grupo.  
 
-> Relacione sempre os pontos observados com as hipóteses informais definidas na introdução, fortalecendo a análise crítica do experimento.
+7. **H4 — Repositórios com mais releases apresentam maior LCOM.**  
+   *Teste:* Spearman (releases vs LCOM).
+
+Resultado: ρ = 0.339, p = 4.13e-24 (correlação moderada positiva, significativa)
+Interpretação: Projetos com mais releases têm menor coesão (LCOM maior), sugerindo que a pressão por entregas frequentes pode impactar negativamente a qualidade interna do código.
+
+  <img width="2950" height="2062" alt="image" src="https://github.com/user-attachments/assets/c153d9a0-5e31-4d99-b6e4-9080cfac46b1" />
+ 
+
+9. **H5 — Repositórios mais populares (estrelas) apresentam maior DIT.**  
+   *Teste:* Spearman (stars vs DIT).
+
+Resultado: ρ = -0.018, p = 0.596 (correlação muito fraca negativa, não significativa)
+Interpretação: Não há relação significativa entre popularidade e profundidade de herança. A popularidade não está associada à complexidade das hierarquias de classes.
+
+<img width="2942" height="2062" alt="image" src="https://github.com/user-attachments/assets/b42252fb-f79b-4744-929a-c0d6c715a2dd" />
 
 ---
 
-## 8. Conclusão
+## 7. Estatísticas descritivas
 
-Resumo das principais descobertas do laboratório.
-
-- **🏆 Principais insights:**  
-  - Big numbers encontrados nos repositórios, popularidade e métricas destacadas.  
-  - Descobertas relevantes sobre padrões de contribuição, releases, issues fechadas ou linguagens mais utilizadas.  
-  - Confirmações ou refutações das hipóteses informais levantadas pelo grupo.
-
-- **⚠️ Problemas e dificuldades enfrentadas:**  
-  - Limitações da API do GitHub e paginação de grandes volumes de dados.  
-  - Normalização e tratamento de dados inconsistentes ou ausentes.  
-  - Desafios com cálculos de métricas ou integração de múltiplos arquivos CSV.  
-
-- **🚀 Sugestões para trabalhos futuros:**  
-  - Analisar métricas adicionais ou aprofundar correlações entre métricas de qualidade e métricas de processo.  
-  - Testar outras linguagens de programação ou frameworks.  
-  - Implementar dashboards interativos para visualização de grandes volumes de dados.  
-  - Explorar métricas de tendências temporais ou evolução de repositórios ao longo do tempo.
+| Métrica | Média | Mediana | Desvio Padrão | Mín | Máx |
+|---------|--------|---------|---------------|-----|-----|
+| Stars | 8,901 | 5,579 | 10,326 | 3,415 | 117,049 |
+| Releases | 33 | 9 | 73 | 0 | 1,000 |
+| Age (anos) | 9.65 | 9.76 | 2.97 | 0.18 | 16.68 |
+| LOC | 115,828 | 32,740 | 253,247 | 50 | 2,523,271 |
+| CBO | 5.22 | 5.19 | 1.79 | 0.00 | 16.33 |
+| DIT | 1.47 | 1.41 | 0.37 | 1.00 | 4.39 |
+| LCOM | 61.02 | 23.62 | 159.99 | 0.00 | 1,674.70 |
 
 ---
 
-## 9. Referências
-
-- [📌 GitHub GraphQL API Documentation](https://docs.github.com/en/graphql)
-- [📌 CK Metrics Tool](https://github.com/mauricioaniche/ck)
-- [📌 Chidamber, S. R., & Kemerer, C. F. (1994). A metrics suite for object oriented design](https://ieeexplore.ieee.org/document/295895)
-- [📌 Biblioteca Pandas](https://pandas.pydata.org/)
-- [📌 Matplotlib Documentation](https://matplotlib.org/)
-- [📌 Seaborn Statistical Data Visualization](https://seaborn.pydata.org/)
-
+## 8. Discussão e limitações
+- As hipóteses H1, H2, H3 e H4 foram confirmadas com significância estatística, embora com correlações entre fracas e moderadas.
+- A hipótese H5 foi rejeitada, não havendo relação entre popularidade e profundidade de herança.
+- Correlação não implica causalidade - as relações encontradas indicam associações, mas não relações de causa e efeito.
+- A alta variabilidade nas métricas (desvios padrão elevados) indica grande diversidade nos projetos analisados.
 ---
 
-## 10. Apêndices
-
-### A. Scripts Desenvolvidos
-
-#### A.1 Script de Coleta via GitHub API (`github_collector.py`)
-```python
-# Script fornecido para coleta dos top-1000 repositórios Java
-# Utiliza GraphQL API do GitHub com paginação e retry
-```
-
-#### A.2 Script de Extração de Métricas CK (`ck_metrics_extractor.py`)
-```python
-# Script para automação da ferramenta CK
-# Inclui clonagem, execução e consolidação de resultados
-```
-
-#### A.3 Query GraphQL (`query.graphql`)
-```graphql
-# Query utilizada para buscar repositórios Java ordenados por estrelas
-```
-
-### B. Arquivos de Dados
-
-- 💾 `repositories.csv` - Lista dos 1.000 repositórios coletados
-- 💾 `all_class_metrics.csv` - Métricas consolidadas de todas as classes
-- 💾 `summary_metrics.csv` - Sumarização das métricas por repositório
-
-### C. Configuração do Ambiente
-
-#### C.1 Dependências Python (`requirements.txt`)
-```
-pandas==1.5.3
-gitpython==3.1.31
-gql==3.4.1
-python-dotenv==1.0.0
-requests==2.31.0
-matplotlib==3.7.1
-seaborn==0.12.2
-```
-
-#### C.2 Configuração da Ferramenta CK
-```bash
-# Clonagem e compilação da ferramenta CK
-git clone https://github.com/mauricioaniche/ck.git
-cd ck
-mvn clean package
-```
-
-
+## 9. Conclusão
+- **Popularidade vs Qualidade:** Não há relação forte entre popularidade (estrelas) e qualidade interna do código.
+- **Maturidade:** Projetos mais antigos tendem a ter hierarquias mais complexas e menor coesão.
+- **Atividade:** Maior frequência de releases está associada a maior acoplamento e menor coesão.
+- **Tamanho:** Sistemas maiores apresentam maior complexidade estrutural e menor qualidade interna.
+- **Implicações:** O desenvolvimento colaborativo em projetos open-source pode estar sujeito a trade-offs entre produtividade (releases frequentes) e qualidade interna.
 
 ---
