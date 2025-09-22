@@ -294,7 +294,7 @@ Quatro análises específicas que exploram **relações categóricas** e **compa
 
 
 
-## 7. Estatísticas descritivas
+## 8. Estatísticas descritivas
 
 | Métrica | Média | Mediana | Desvio Padrão | Mín | Máx |
 |---------|--------|---------|---------------|-----|-----|
@@ -308,14 +308,14 @@ Quatro análises específicas que exploram **relações categóricas** e **compa
 
 ---
 
-## 8. Discussão e limitações
+## 9. Discussão e limitações
 - As hipóteses H1, H2, H3 e H4 foram confirmadas com significância estatística, embora com correlações entre fracas e moderadas.
 - A hipótese H5 foi rejeitada, não havendo relação entre popularidade e profundidade de herança.
 - Correlação não implica causalidade - as relações encontradas indicam associações, mas não relações de causa e efeito.
 - A alta variabilidade nas métricas (desvios padrão elevados) indica grande diversidade nos projetos analisados.
 ---
 
-## 9. Conclusão
+## 10. Conclusão
 - **Popularidade vs Qualidade:** Não há relação forte entre popularidade (estrelas) e qualidade interna do código.
 - **Maturidade:** Projetos mais antigos tendem a ter hierarquias mais complexas e menor coesão.
 - **Atividade:** Maior frequência de releases está associada a maior acoplamento e menor coesão.
