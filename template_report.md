@@ -147,7 +147,7 @@ Interpretação: Existe uma correlação fraca mas significativa entre popularid
   <img width="2943" height="2062" alt="image" src="https://github.com/user-attachments/assets/b0197965-fadb-4830-9645-2bc380281464" />
 
 
-3. **H2 — Repositórios mais antigos apresentam maior LOC.**  
+3. **H2 — Repositórios mais antigos apresentam maior LOC(Tamanho).**  
    *Teste:* Spearman (idade vs LOC).
 
 Resultado: ρ = 0.102, p = 0.00302 (correlação fraca positiva, significativa)
@@ -156,7 +156,7 @@ Interpretação: Projetos mais antigos tendem a ser maiores, confirmando a hipó
  <img width="2950" height="2062" alt="image" src="https://github.com/user-attachments/assets/b52bd800-8e34-4b7d-847f-a659f6445273" />
  
 
-5. **H3 — Projetos maiores (LOC) têm maior CBO.**  
+5. **H3 — Projetos maiores (LOC) têm maior CBO(Coupling between objects).**  
    *Teste:* Spearman (LOC vs CBO).
 
 Resultado: ρ = 0.291, p = 6.47e-18 (correlação fraca positiva, significativa)
@@ -165,7 +165,7 @@ Interpretação: Sistemas maiores apresentam maior acoplamento entre objetos, co
 <img width="2949" height="2062" alt="image" src="https://github.com/user-attachments/assets/76e316f2-a991-4aa2-9738-62a39240fb55" />
 
 
-7. **H4 — Repositórios com mais releases apresentam maior LCOM.**  
+7. **H4 — Repositórios com mais releases apresentam maior LCOM(Lack of Cohesion of Methods).**  
    *Teste:* Spearman (releases vs LCOM).
 
 Resultado: ρ = 0.339, p = 4.13e-24 (correlação moderada positiva, significativa)
@@ -174,7 +174,7 @@ Interpretação: Projetos com mais releases têm menor coesão (LCOM maior), sug
   <img width="2950" height="2062" alt="image" src="https://github.com/user-attachments/assets/c153d9a0-5e31-4d99-b6e4-9080cfac46b1" />
  
 
-9. **H5 — Repositórios mais populares (estrelas) apresentam maior DIT.**  
+9. **H5 — Repositórios mais populares (estrelas) apresentam maior DIT(epth Inheritance Tree).**  
    *Teste:* Spearman (stars vs DIT).
 
 Resultado: ρ = -0.018, p = 0.596 (correlação muito fraca negativa, não significativa)
